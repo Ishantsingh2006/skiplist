@@ -1,0 +1,23 @@
+# Compiled binaries
+skiplist_demo
+skiplist_test
+skiplist_benchmark
+
+# Benchmark results
+results.json
+results.csv
+benchmark.png
+
+# Object files & OS temp files
+*.o
+*.out
+.DS_Store
+
+# VS Code settings
+.vscode/
+
+# Generated Benchmark Images
+insert_performance.png
+contain_performance.png
+remove_performance.png
+mixed_performance.png
