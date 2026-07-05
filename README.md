@@ -131,8 +131,8 @@ Measures throughput under mixed workloads:
   * **Read-Only scaling (Increases)**: Since contain (lookup) operations acquire a shared lock (`std::shared_lock`), multiple threads read the Skip List simultaneously on different CPU cores. As the thread count increases, the total aggregate throughput of the system **increases (scales up)** because the CPU cores perform reads in parallel.
   * **Write-Only scaling (Decreases)**: Write operations require an exclusive lock (`std::unique_lock`). Only one thread can write at any moment while all other writer threads are blocked. Because writes are serialized, increasing the number of threads cannot increase write performance. Instead, throughput **decreases** due to the CPU cycles wasted on lock acquisition delays, operating system thread scheduling, and context-switching overhead.
 * **Mixed Workload Behavior**:
-  * The performance of mixed workloads is directly dictated by the ratio of write operations. The *Read-Heavy* workload (20% insert, 70% contain, 10% remove) runs significantly faster and scales better than the *Write-Heavy* workload (80% insert, 20% contain) due to the higher utilization of concurrent shared locks.
-
+    * For Thread 1: Read-Heavy is faster because there is no thread contention, allowing its 70% simple lookup operations to execute without lock serialization or allocator overhead.
+    * For Threads >= 2: Write-Heavy becomes faster due to key saturation (0% removals) converting inserts into early-return duplicate checks. These duplicate checks avoid CPU-heavy heap allocations ( new ) and pointer mutations that would invalidate CPU cache lines. Conversely, Read-Heavy's 10% removal rate prevents saturation, forcing threads to continuously  allocate and deallocate memory. This triggers slow global memory allocator locks (in  malloc / free ) and cache misses across threads, bottlenecking multi-threaded performance.
 ---
 
 ### Member Functions & Time Complexity
