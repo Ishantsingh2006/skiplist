@@ -76,7 +76,8 @@ Measures throughput (in operations per millisecond) under sequential vs. random 
 |  **4 Threads**| 745 ops/ms              | 438 ops/ms           |
 |  **8 Threads**| 627 ops/ms              | 432 ops/ms           |
 
-![Insertion Performance](insert_performance.png)
+<img width="700" height="450" alt="insert_performance" src="https://github.com/user-attachments/assets/4b448749-a5da-42f3-bb83-7f3d5bcd8f0d" />
+
 
 ### 2. Contain (Lookup) Performance
 Measures lookup throughput (in operations per millisecond). Since lookups run under a shared lock, multiple reader threads can search concurrently without blocking each other.
@@ -87,8 +88,8 @@ Measures lookup throughput (in operations per millisecond). Since lookups run un
 |  **2 Threads**| 5,882 ops/ms      | 3,724 ops/ms  |
 |  **4 Threads**| 10,752 ops/ms     | 7,393 ops/ms  |
 |  **8 Threads**| 18,779 ops/ms     | 12,084 ops/ms |
+<img width="700" height="450" alt="contain_performance" src="https://github.com/user-attachments/assets/fb97342d-18e2-40c6-9426-61350ddd363d" />
 
-![Contain Performance](contain_performance.png)
 
 ### 3. Remove (Deletion) Performance
 Measures deletion throughput (in operations per millisecond) under concurrent deletion workloads.
@@ -100,7 +101,8 @@ Measures deletion throughput (in operations per millisecond) under concurrent de
 |  **4 Threads**| 1,828 ops/ms      | 1,700 ops/ms  |
 |  **8 Threads**| 1,591 ops/ms      | 1,612 ops/ms  |
 
-![Remove Performance](remove_performance.png)
+<img width="700" height="450" alt="remove_performance" src="https://github.com/user-attachments/assets/73dd1c12-5fb7-4c6d-8d44-461d904ecce5" />
+
 
 ### 4. Mixed Workload Distributions
 Measures throughput under mixed workloads:
@@ -115,7 +117,8 @@ Measures throughput under mixed workloads:
 |  **4 Threads**| 697 ops/ms       | 678 ops/ms            | 866 ops/ms            |
 |  **8 Threads**| 639 ops/ms       | 644 ops/ms            | 798 ops/ms            |
 
-![Mixed Performance](mixed_performance.png)
+<img width="700" height="450" alt="mixed_performance" src="https://github.com/user-attachments/assets/5918f29b-9170-4ab8-ac29-7697a56d79f0" />
+
 
 ### Key Observations & Performance Analysis
 
@@ -128,14 +131,10 @@ Measures throughput under mixed workloads:
   * **Read-Only scaling (Increases)**: Since contain (lookup) operations acquire a shared lock (`std::shared_lock`), multiple threads read the Skip List simultaneously on different CPU cores. As the thread count increases, the total aggregate throughput of the system **increases (scales up)** because the CPU cores perform reads in parallel.
   * **Write-Only scaling (Decreases)**: Write operations require an exclusive lock (`std::unique_lock`). Only one thread can write at any moment while all other writer threads are blocked. Because writes are serialized, increasing the number of threads cannot increase write performance. Instead, throughput **decreases** due to the CPU cycles wasted on lock acquisition delays, operating system thread scheduling, and context-switching overhead.
 * **Correlations with the MIT PRIMES Study**:
-  * **Read-Only Scalability**: Just like the MIT PRIMES paper ("Performance Analysis and Optimization of Skip Lists"), our benchmarks show that read-only lookup workloads scale smoothly with thread counts, validating the efficiency of lock-free or shared-lock read structures.
-  * **Read-Write Scaling Ceiling**: The MIT study observed that read-write throughput does not scale linearly and drops off sharply at higher thread counts due to lock contention and memory allocator bottlenecks. Our mixed and write benchmarks exhibit this exact behavior: we see a sharp drop-off in throughput when moving from 1 to 2 threads, confirming that lock contention creates a scalability bottleneck for modifying operations.
 * **Mixed Workload Behavior**:
   * The performance of mixed workloads is directly dictated by the ratio of write operations. The *Read-Heavy* workload (20% insert, 70% contain, 10% remove) runs significantly faster and scales better than the *Write-Heavy* workload (80% insert, 20% contain) due to the higher utilization of concurrent shared locks.
 
 ---
-
-## API Reference
 
 ### Member Functions & Time Complexity
 
