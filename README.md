@@ -130,7 +130,6 @@ Measures throughput under mixed workloads:
 * **Why Read Throughput Increases vs. Why Write Throughput Decreases**:
   * **Read-Only scaling (Increases)**: Since contain (lookup) operations acquire a shared lock (`std::shared_lock`), multiple threads read the Skip List simultaneously on different CPU cores. As the thread count increases, the total aggregate throughput of the system **increases (scales up)** because the CPU cores perform reads in parallel.
   * **Write-Only scaling (Decreases)**: Write operations require an exclusive lock (`std::unique_lock`). Only one thread can write at any moment while all other writer threads are blocked. Because writes are serialized, increasing the number of threads cannot increase write performance. Instead, throughput **decreases** due to the CPU cycles wasted on lock acquisition delays, operating system thread scheduling, and context-switching overhead.
-* **Correlations with the MIT PRIMES Study**:
 * **Mixed Workload Behavior**:
   * The performance of mixed workloads is directly dictated by the ratio of write operations. The *Read-Heavy* workload (20% insert, 70% contain, 10% remove) runs significantly faster and scales better than the *Write-Heavy* workload (80% insert, 20% contain) due to the higher utilization of concurrent shared locks.
 
