@@ -76,7 +76,8 @@ Measures throughput (in operations per millisecond) under sequential vs. random 
 |  **4 Threads**| 697 ops/ms              | 438 ops/ms           |
 |  **8 Threads**| 658 ops/ms              | 377 ops/ms           |
 
-<img width="700" height="450" alt="insert_performance" src="https://github.com/user-attachments/assets/4b448749-a5da-42f3-bb83-7f3d5bcd8f0d" />
+<img width="700" height="450" alt="insert_performance" src="https://github.com/user-attachments/assets/38f74842-882c-4594-9822-eee42eb529e2" />
+
 
 
 ### 2. Contain (Lookup) Performance
@@ -88,7 +89,8 @@ Measures lookup throughput (in operations per millisecond). Since lookups run un
 |  **2 Threads**| 5,594 ops/ms      | 3,871 ops/ms  |
 |  **4 Threads**| 9,923 ops/ms      | 7,099 ops/ms  |
 |  **8 Threads**| 16,197 ops/ms     | 11,516 ops/ms |
-<img width="700" height="450" alt="contain_performance" src="https://github.com/user-attachments/assets/fb97342d-18e2-40c6-9426-61350ddd363d" />
+<img width="700" height="450" alt="contain_performance" src="https://github.com/user-attachments/assets/9c51d21a-29ab-4230-8052-28ce97008453" />
+
 
 
 ### 3. Remove (Deletion) Performance
@@ -101,7 +103,8 @@ Measures deletion throughput (in operations per millisecond) under concurrent de
 |  **4 Threads**| 1,754 ops/ms      | 1,903 ops/ms  |
 |  **8 Threads**| 1,728 ops/ms      | 1,760 ops/ms  |
 
-<img width="700" height="450" alt="remove_performance" src="https://github.com/user-attachments/assets/73dd1c12-5fb7-4c6d-8d44-461d904ecce5" />
+<img width="700" height="450" alt="remove_performance" src="https://github.com/user-attachments/assets/b70f5c15-151a-45f6-891f-4f5964d0ca2d" />
+
 
 
 ### 4. Mixed Workload Distributions
@@ -117,7 +120,7 @@ Measures throughput under mixed workloads:
 |  **4 Threads**| 662 ops/ms       | 649 ops/ms            | 696 ops/ms            |
 |  **8 Threads**| 631 ops/ms       | 625 ops/ms            | 677 ops/ms            |
 
-<img width="700" height="450" alt="mixed_performance" src="https://github.com/user-attachments/assets/5918f29b-9170-4ab8-ac29-7697a56d79f0" />
+<img width="700" height="450" alt="mixed_performance" src="https://github.com/user-attachments/assets/8580f480-6e8e-4ecd-aec2-4e9b02ef03ac" />
 
 
 ### Key Observations & Performance Analysis
