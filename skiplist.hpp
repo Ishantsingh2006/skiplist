@@ -94,13 +94,14 @@ namespace custom
 
         SkipListIterator &operator++()
         {
-            if (m_node != m_head)
+            if (m_node == m_head)
             {
-                m_node = m_node->forward[0];
-                if (m_node == nullptr)
-                {
-                    m_node = m_head;
-                }
+                throw std::out_of_range("cannot increment end iterator");
+            }
+            m_node = m_node->forward[0];
+            if (m_node == nullptr)
+            {
+                m_node = m_head;
             }
             return *this;
         }
@@ -114,6 +115,10 @@ namespace custom
 
         SkipListIterator &operator--()
         {
+            if (m_node == (m_head->forward[0] ? m_head->forward[0] : m_head))
+            {
+                throw std::out_of_range("cannot decrement begin iterator");
+            }
             m_node = m_node->prev;
             return *this;
         }
@@ -171,13 +176,14 @@ namespace custom
 
         SkipListConstIterator &operator++()
         {
-            if (m_node != m_head)
+            if (m_node == m_head)
             {
-                m_node = m_node->forward[0];
-                if (m_node == nullptr)
-                {
-                    m_node = m_head;
-                }
+                throw std::out_of_range("cannot increment end iterator");
+            }
+            m_node = m_node->forward[0];
+            if (m_node == nullptr)
+            {
+                m_node = m_head;
             }
             return *this;
         }
@@ -191,6 +197,10 @@ namespace custom
 
         SkipListConstIterator &operator--()
         {
+            if (m_node == (m_head->forward[0] ? m_head->forward[0] : m_head))
+            {
+                throw std::out_of_range("cannot decrement begin iterator");
+            }
             m_node = m_node->prev;
             return *this;
         }
@@ -259,6 +269,71 @@ namespace custom
             return level;
         }
 
+        bool equivalent(const Key &a, const Key &b) const
+        {
+            return !m_compare(a, b) && !m_compare(b, a);
+        }
+
+        std::vector<NodeBase *> find_predecessors(const Key &key) const
+        {
+            std::vector<NodeBase *> update(m_max_level, nullptr);
+            const NodeBase *curr = &m_head;
+            for (int i = static_cast<int>(m_max_level) - 1; i >= 0; --i)
+            {
+                while (curr->forward[i] != nullptr)
+                {
+                    const Node<Key, T> *next_node = static_cast<const Node<Key, T> *>(curr->forward[i]);
+                    if (m_compare(next_node->value.first, key))
+                    {
+                        curr = curr->forward[i];
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                update[i] = const_cast<NodeBase *>(curr);
+            }
+            return update;
+        }
+
+        iterator find_existing(const Key &key, const std::vector<NodeBase *> &update)
+        {
+            NodeBase *next = update[0]->forward[0];
+            if (next != nullptr)
+            {
+                Node<Key, T> *next_node = static_cast<Node<Key, T> *>(next);
+                if (equivalent(key, next_node->value.first))
+                {
+                    return iterator(next, &m_head);
+                }
+            }
+            return iterator(&m_head, &m_head);
+        }
+
+        iterator create_node(Key &&key, T &&value, const std::vector<NodeBase *> &update)
+        {
+            size_t lvl = random_level();
+            Node<Key, T> *new_node = new Node<Key, T>(std::move(key), std::move(value), lvl);
+            for (size_t i = 0; i < lvl; ++i)
+            {
+                new_node->forward[i] = update[i]->forward[i];
+                update[i]->forward[i] = new_node;
+            }
+
+            new_node->prev = (update[0] == &m_head) ? nullptr : update[0];
+            if (new_node->forward[0] != nullptr)
+            {
+                new_node->forward[0]->prev = new_node;
+            }
+            else
+            {
+                m_head.prev = new_node;
+            }
+            m_size++;
+            return iterator(new_node, &m_head);
+        }
+
         template <typename Self>
         auto *find_helper(this Self &&self, const Key &key)
         {
@@ -291,7 +366,7 @@ namespace custom
                                                    const Node<Key, T> *,
                                                    Node<Key, T> *>;
                 NodePtr next_node = static_cast<NodePtr>(next);
-                if (!self.m_compare(key, next_node->value.first) && !self.m_compare(next_node->value.first, key))
+                if (self.equivalent(key, next_node->value.first))
                 {
                     return next;
                 }
@@ -299,80 +374,11 @@ namespace custom
             return static_cast<NodeBasePtr>(nullptr);
         }
 
-        std::pair<iterator, bool> insert_helper(Key &&key, T &&value)
-        {
-            std::vector<NodeBase *> update(m_max_level, nullptr);
-            NodeBase *curr = &m_head;
-            for (int i = static_cast<int>(m_max_level) - 1; i >= 0; --i)
-            {
-                while (curr->forward[i] != nullptr)
-                {
-                    Node<Key, T> *next_node = static_cast<Node<Key, T> *>(curr->forward[i]);
-                    if (m_compare(next_node->value.first, key))
-                    {
-                        curr = curr->forward[i];
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                update[i] = curr;
-            }
-
-            NodeBase *next = curr->forward[0];
-            if (next != nullptr)
-            {
-                Node<Key, T> *next_node = static_cast<Node<Key, T> *>(next);
-                if (!m_compare(key, next_node->value.first) && !m_compare(next_node->value.first, key))
-                {
-                    return {iterator(next, &m_head), false};
-                }
-            }
-
-            size_t lvl = random_level();
-            Node<Key, T> *new_node = new Node<Key, T>(std::move(key), std::move(value), lvl);
-
-            for (size_t i = 0; i < lvl; ++i)
-            {
-                new_node->forward[i] = update[i]->forward[i];
-                update[i]->forward[i] = new_node;
-            }
-
-            new_node->prev = update[0];
-            if (new_node->forward[0] != nullptr)
-            {
-                new_node->forward[0]->prev = new_node;
-            }
-            else
-            {
-                m_head.prev = new_node;
-            }
-
-            m_size++;
-            return {iterator(new_node, &m_head), true};
-        }
 
         size_type erase_helper(const Key &key)
         {
-            std::vector<NodeBase *> update(m_max_level, nullptr);
-            NodeBase *curr = &m_head;
-            for (int i = static_cast<int>(m_max_level) - 1; i >= 0; --i)
-            {
-                while (curr->forward[i] != nullptr)
-                {
-                    Node<Key, T> *next_node = static_cast<Node<Key, T> *>(curr->forward[i]);
-                    if (m_compare(next_node->value.first, key))
-                    {
-                        curr = curr->forward[i];
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                update[i] = curr;
-            }
+            std::vector<NodeBase *> update = find_predecessors(key);
+            NodeBase *curr = update[0];
 
             NodeBase *next = curr->forward[0];
             if (next == nullptr)
@@ -381,17 +387,14 @@ namespace custom
             }
 
             Node<Key, T> *target_node = static_cast<Node<Key, T> *>(next);
-            if (m_compare(key, target_node->value.first) || m_compare(target_node->value.first, key))
+            if (!equivalent(key, target_node->value.first))
             {
                 return 0;
             }
 
             for (size_t i = 0; i < target_node->forward.size(); ++i)
             {
-                if (update[i]->forward[i] == target_node)
-                {
-                    update[i]->forward[i] = target_node->forward[i];
-                }
+                update[i]->forward[i] = target_node->forward[i];
             }
 
             if (target_node->forward[0] != nullptr)
@@ -408,6 +411,21 @@ namespace custom
             return 1;
         }
 
+        template <typename M>
+        std::pair<iterator, bool> insert_or_assign(const Key &k, M &&obj)
+        {
+            std::unique_lock<std::shared_mutex> lock(m_mutex);
+            std::vector<NodeBase *> update = find_predecessors(k);
+            iterator it = find_existing(k, update);
+            if (it != iterator(&m_head, &m_head))
+            {
+                it->second = std::forward<M>(obj);
+                return {it, false};
+            }
+            iterator new_it = create_node(Key(k), T(std::forward<M>(obj)), update);
+            return {new_it, true};
+        }
+
     public:
         explicit ConcurrentSkipList(size_t max_level = 32, float p = 0.5f, const Compare &comp = Compare())
             : m_head(max_level),
@@ -421,7 +439,7 @@ namespace custom
                 throw std::invalid_argument("Probability p must be between 0.0 and 1.0");
             }
             m_p = p;
-            m_head.prev = &m_head;
+            m_head.prev = nullptr;
         }
 
         ~ConcurrentSkipList()
@@ -441,17 +459,9 @@ namespace custom
             m_size = other.m_size;
             m_head.forward = std::move(other.m_head.forward);
             m_head.prev = other.m_head.prev;
-            if (m_head.prev == &other.m_head)
-            {
-                m_head.prev = &m_head;
-            }
-            else if (m_head.forward[0] != nullptr)
-            {
-                m_head.forward[0]->prev = &m_head;
-            }
 
             other.m_head.forward.resize(other.m_max_level, nullptr);
-            other.m_head.prev = &other.m_head;
+            other.m_head.prev = nullptr;
             other.m_size = 0;
         }
 
@@ -470,17 +480,9 @@ namespace custom
                 m_size = other.m_size;
                 m_head.forward = std::move(other.m_head.forward);
                 m_head.prev = other.m_head.prev;
-                if (m_head.prev == &other.m_head)
-                {
-                    m_head.prev = &m_head;
-                }
-                else if (m_head.forward[0] != nullptr)
-                {
-                    m_head.forward[0]->prev = &m_head;
-                }
 
                 other.m_head.forward.resize(other.m_max_level, nullptr);
-                other.m_head.prev = &other.m_head;
+                other.m_head.prev = nullptr;
                 other.m_size = 0;
             }
             return *this;
@@ -516,75 +518,21 @@ namespace custom
                 curr = next;
             }
             std::fill(m_head.forward.begin(), m_head.forward.end(), nullptr);
-            m_head.prev = &m_head;
+            m_head.prev = nullptr;
             m_size = 0;
         }
 
         std::pair<iterator, bool> insert(const value_type &val)
         {
-            std::unique_lock<std::shared_mutex> lock(m_mutex);
-            return insert_helper(Key(val.first), T(val.second));
+            return insert_or_assign(val.first, val.second);
         }
 
         std::pair<iterator, bool> insert(value_type &&val)
         {
-            std::unique_lock<std::shared_mutex> lock(m_mutex);
-            return insert_helper(std::move(const_cast<Key &>(val.first)), std::move(val.second));
+            return insert_or_assign(val.first, std::move(val.second));
         }
 
-        template <typename M>
-        std::pair<iterator, bool> insert_or_assign(const Key &k, M &&obj)
-        {
-            std::unique_lock<std::shared_mutex> lock(m_mutex);
-            std::vector<NodeBase *> update(m_max_level, nullptr);
-            NodeBase *curr = &m_head;
-            for (int i = static_cast<int>(m_max_level) - 1; i >= 0; --i)
-            {
-                while (curr->forward[i] != nullptr)
-                {
-                    Node<Key, T> *next_node = static_cast<Node<Key, T> *>(curr->forward[i]);
-                    if (m_compare(next_node->value.first, k))
-                    {
-                        curr = curr->forward[i];
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                update[i] = curr;
-            }
 
-            NodeBase *next = curr->forward[0];
-            if (next != nullptr)
-            {
-                Node<Key, T> *next_node = static_cast<Node<Key, T> *>(next);
-                if (!m_compare(k, next_node->value.first) && !m_compare(next_node->value.first, k))
-                {
-                    next_node->value.second = std::forward<M>(obj);
-                    return {iterator(next, &m_head), false};
-                }
-            }
-
-            size_t lvl = random_level();
-            Node<Key, T> *new_node = new Node<Key, T>(k, std::forward<M>(obj), lvl);
-            for (size_t i = 0; i < lvl; ++i)
-            {
-                new_node->forward[i] = update[i]->forward[i];
-                update[i]->forward[i] = new_node;
-            }
-            new_node->prev = update[0];
-            if (new_node->forward[0] != nullptr)
-            {
-                new_node->forward[0]->prev = new_node;
-            }
-            else
-            {
-                m_head.prev = new_node;
-            }
-            m_size++;
-            return {iterator(new_node, &m_head), true};
-        }
 
         size_type erase(const Key &key)
         {
@@ -624,53 +572,14 @@ namespace custom
         T &operator[](const Key &key)
         {
             std::unique_lock<std::shared_mutex> lock(m_mutex);
-            std::vector<NodeBase *> update(m_max_level, nullptr);
-            NodeBase *curr = &m_head;
-            for (int i = static_cast<int>(m_max_level) - 1; i >= 0; --i)
+            std::vector<NodeBase *> update = find_predecessors(key);
+            iterator it = find_existing(key, update);
+            if (it != iterator(&m_head, &m_head))
             {
-                while (curr->forward[i] != nullptr)
-                {
-                    Node<Key, T> *next_node = static_cast<Node<Key, T> *>(curr->forward[i]);
-                    if (m_compare(next_node->value.first, key))
-                    {
-                        curr = curr->forward[i];
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                update[i] = curr;
+                return it->second;
             }
-
-            NodeBase *next = curr->forward[0];
-            if (next != nullptr)
-            {
-                Node<Key, T> *next_node = static_cast<Node<Key, T> *>(next);
-                if (!m_compare(key, next_node->value.first) && !m_compare(next_node->value.first, key))
-                {
-                    return next_node->value.second;
-                }
-            }
-
-            size_t lvl = random_level();
-            Node<Key, T> *new_node = new Node<Key, T>(key, T(), lvl);
-            for (size_t i = 0; i < lvl; ++i)
-            {
-                new_node->forward[i] = update[i]->forward[i];
-                update[i]->forward[i] = new_node;
-            }
-            new_node->prev = update[0];
-            if (new_node->forward[0] != nullptr)
-            {
-                new_node->forward[0]->prev = new_node;
-            }
-            else
-            {
-                m_head.prev = new_node;
-            }
-            m_size++;
-            return new_node->value.second;
+            iterator new_it = create_node(Key(key), T(), update);
+            return new_it->second;
         }
 
         // Lookup
@@ -771,7 +680,7 @@ namespace custom
                         return std::unexpected(IntegrityError::FORWARD_POINTER_NULL_LEVEL_0);
                     }
                 }
-                if (m_head.prev != &m_head)
+                if (m_head.prev != nullptr)
                 {
                     return std::unexpected(IntegrityError::COUNT_MISMATCH);
                 }
@@ -790,7 +699,7 @@ namespace custom
                     return std::unexpected(IntegrityError::INVALID_HEIGHT);
                 }
 
-                if (node->prev == nullptr || (prev == nullptr && node->prev != &m_head) || (prev != nullptr && node->prev != prev))
+                if ((prev == nullptr && node->prev != nullptr) || (prev != nullptr && node->prev != prev))
                 {
                     return std::unexpected(IntegrityError::FORWARD_POINTER_NULL_LEVEL_0);
                 }

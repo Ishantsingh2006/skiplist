@@ -71,10 +71,10 @@ Measures throughput (in operations per millisecond) under sequential vs. random 
 
 | Thread Count | Sequential Key Insertion | Random Key Insertion |
 |:------------:|:------------------------:|:--------------------:|
-|  **1 Thread** | 1,196 ops/ms            | 668 ops/ms           |
-|  **2 Threads**| 872 ops/ms              | 461 ops/ms           |
-|  **4 Threads**| 745 ops/ms              | 438 ops/ms           |
-|  **8 Threads**| 627 ops/ms              | 432 ops/ms           |
+|  **1 Thread** | 1,197 ops/ms            | 623 ops/ms           |
+|  **2 Threads**| 893 ops/ms              | 427 ops/ms           |
+|  **4 Threads**| 697 ops/ms              | 438 ops/ms           |
+|  **8 Threads**| 658 ops/ms              | 377 ops/ms           |
 
 <img width="700" height="450" alt="insert_performance" src="https://github.com/user-attachments/assets/4b448749-a5da-42f3-bb83-7f3d5bcd8f0d" />
 
@@ -84,10 +84,10 @@ Measures lookup throughput (in operations per millisecond). Since lookups run un
 
 | Thread Count | Sequential Lookup | Random Lookup |
 |:------------:|:-----------------:|:-------------:|
-|  **1 Thread** | 3,184 ops/ms      | 2,136 ops/ms  |
-|  **2 Threads**| 5,882 ops/ms      | 3,724 ops/ms  |
-|  **4 Threads**| 10,752 ops/ms     | 7,393 ops/ms  |
-|  **8 Threads**| 18,779 ops/ms     | 12,084 ops/ms |
+|  **1 Thread** | 2,989 ops/ms      | 2,079 ops/ms  |
+|  **2 Threads**| 5,594 ops/ms      | 3,871 ops/ms  |
+|  **4 Threads**| 9,923 ops/ms      | 7,099 ops/ms  |
+|  **8 Threads**| 16,197 ops/ms     | 11,516 ops/ms |
 <img width="700" height="450" alt="contain_performance" src="https://github.com/user-attachments/assets/fb97342d-18e2-40c6-9426-61350ddd363d" />
 
 
@@ -96,10 +96,10 @@ Measures deletion throughput (in operations per millisecond) under concurrent de
 
 | Thread Count | Sequential Remove | Random Remove |
 |:------------:|:-----------------:|:-------------:|
-|  **1 Thread** | 4,405 ops/ms      | 4,273 ops/ms  |
-|  **2 Threads**| 1,904 ops/ms      | 2,148 ops/ms  |
-|  **4 Threads**| 1,828 ops/ms      | 1,700 ops/ms  |
-|  **8 Threads**| 1,591 ops/ms      | 1,612 ops/ms  |
+|  **1 Thread** | 4,132 ops/ms      | 4,045 ops/ms  |
+|  **2 Threads**| 2,068 ops/ms      | 1,954 ops/ms  |
+|  **4 Threads**| 1,754 ops/ms      | 1,903 ops/ms  |
+|  **8 Threads**| 1,728 ops/ms      | 1,760 ops/ms  |
 
 <img width="700" height="450" alt="remove_performance" src="https://github.com/user-attachments/assets/73dd1c12-5fb7-4c6d-8d44-461d904ecce5" />
 
@@ -112,10 +112,10 @@ Measures throughput under mixed workloads:
 
 | Thread Count | Equal (30/40/30) | Read-Heavy (20/70/10) | Write-Heavy (80/20/0) |
 |:------------:|:----------------:|:---------------------:|:---------------------:|
-|  **1 Thread** | 1,506 ops/ms     | 1,941 ops/ms          | 1,709 ops/ms          |
-|  **2 Threads**| 721 ops/ms       | 737 ops/ms            | 869 ops/ms            |
-|  **4 Threads**| 697 ops/ms       | 678 ops/ms            | 866 ops/ms            |
-|  **8 Threads**| 639 ops/ms       | 644 ops/ms            | 798 ops/ms            |
+|  **1 Thread** | 1,631 ops/ms     | 1,836 ops/ms          | 1,587 ops/ms          |
+|  **2 Threads**| 707 ops/ms       | 695 ops/ms            | 797 ops/ms            |
+|  **4 Threads**| 662 ops/ms       | 649 ops/ms            | 696 ops/ms            |
+|  **8 Threads**| 631 ops/ms       | 625 ops/ms            | 677 ops/ms            |
 
 <img width="700" height="450" alt="mixed_performance" src="https://github.com/user-attachments/assets/5918f29b-9170-4ab8-ac29-7697a56d79f0" />
 
@@ -123,13 +123,16 @@ Measures throughput under mixed workloads:
 ### Key Observations & Performance Analysis
 
 * **Sequential vs. Random Write Behavior**:
-  * **Theory vs. Reality**: In theory, multi-threaded random writes **should be faster** than sequential writes because they distribute updates across the Skip List, reducing node-level contention. However, in our real benchmark results, random has **lower throughput** (e.g., 668 ops/ms for random vs. 1196 ops/ms for sequential at 1 thread).
+  * **Theory vs. Reality**: In theory, multi-threaded random writes **should be faster** than sequential writes because they distribute updates across the Skip List, reducing node-level contention. However, in our real benchmark results, random has **lower throughput** (e.g., 623 ops/ms for random vs. 1,197 ops/ms for sequential at 1 thread).
   * **Why Random is Not Faster**:
     1. **Coarse-Grained Locking**: Our implementation uses a coarse-grained read-write lock (`std::shared_mutex` with `std::unique_lock` for writes). This serializes all write operations globally, meaning threads cannot perform parallel modifications anyway. This eliminates any potential scaling advantage that a random distribution would offer.
     2. **Cache Misses**: Because writes are serialized, the performance is dominated by memory hardware performance. Sequential operations access adjacent memory chunks, preserving high cache locality, whereas random operations jump across arbitrary heap locations, causing constant L1/L2 cache misses.
 * **Why Read Throughput Increases vs. Why Write Throughput Decreases**:
   * **Read-Only scaling (Increases)**: Since contain (lookup) operations acquire a shared lock (`std::shared_lock`), multiple threads read the Skip List simultaneously on different CPU cores. As the thread count increases, the total aggregate throughput of the system **increases (scales up)** because the CPU cores perform reads in parallel.
   * **Write-Only scaling (Decreases)**: Write operations require an exclusive lock (`std::unique_lock`). Only one thread can write at any moment while all other writer threads are blocked. Because writes are serialized, increasing the number of threads cannot increase write performance. Instead, throughput **decreases** due to the CPU cycles wasted on lock acquisition delays, operating system thread scheduling, and context-switching overhead.
+* **Correlations with the MIT PRIMES Study**:
+  * **Read-Only Scalability**: Just like the MIT PRIMES paper ("Performance Analysis and Optimization of Skip Lists"), our benchmarks show that read-only lookup workloads scale smoothly with thread counts, validating the efficiency of lock-free or shared-lock read structures.
+  * **Read-Write Scaling Ceiling**: The MIT study observed that read-write throughput does not scale linearly and drops off sharply at higher thread counts due to lock contention and memory allocator bottlenecks. Our mixed and write benchmarks exhibit this exact behavior: we see a sharp drop-off in throughput when moving from 1 to 2 threads, confirming that lock contention creates a scalability bottleneck for modifying operations.
 * **Mixed Workload Behavior**:
     * For Thread 1: Read-Heavy is faster because there is no thread contention, allowing its 70% simple lookup operations to execute without lock serialization or allocator overhead.
     * For Threads >= 2: Write-Heavy becomes faster due to key saturation (0% removals) converting inserts into early-return duplicate checks. These duplicate checks avoid CPU-heavy heap allocations ( new ) and pointer mutations that would invalidate CPU cache lines. Conversely, Read-Heavy's 10% removal rate prevents saturation, forcing threads to continuously  allocate and deallocate memory. This triggers slow global memory allocator locks (in  malloc / free ) and cache misses across threads, bottlenecking multi-threaded performance.
@@ -166,6 +169,15 @@ Measures throughput under mixed workloads:
 | `int get_node_height(const Key& key) const` | Returns the height of a specific node (returns `-1` if not found). | $O(\log n)$ |
 | `void print_distribution(std::ostream& os = std::cout) const` | Prints a visual layout showing level heights of all nodes (for debugging). | $O(n)$ |
 | `std::expected<void, IntegrityError> lacksIntegrity() const` | Validates structural integrity (e.g. forward/back link coherence). | $O(n)$ |
+
+### Mathematical Details on Search Time Complexity
+While the average search complexity is documented as $O(\log n)$, the exact average complexity is dependent on the skip list configuration parameters: **probability $p$** and **maximum level $L$** (specified in the constructor).
+
+The precise average search complexity is:
+$$O\left(\frac{1}{p} \log_{1/p} n + L\right)$$
+
+* **Role of $p$**: Controls the node height promotion probability. A value of $p = 0.5$ (default) creates a balanced base-2 search path (equivalent to a binary tree). If $p$ is too small (approaching 0) or too large (approaching 1), search time degenerates to $O(n)$.
+* **Role of $L$**: Defines the maximum indexing level. The search starts at level $L - 1$ and descends, contributing $O(L)$ steps of overhead. For optimal performance, $L$ should be set close to $\log_{1/p}(N_{\text{max}})$, where $N_{\text{max}}$ is the maximum expected number of elements.
 
 ---
 

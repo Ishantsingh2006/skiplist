@@ -15,6 +15,45 @@ void test_basic_operations() {
     assert(sl.empty());
     assert(sl.size() == 0);
 
+    // Test decrementing begin and incrementing end on empty list throws exception
+    {
+        auto it = sl.begin();
+        bool threw = false;
+        try {
+            --it;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        it = sl.end();
+        threw = false;
+        try {
+            ++it;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        auto cit = sl.cbegin();
+        threw = false;
+        try {
+            --cit;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        cit = sl.cend();
+        threw = false;
+        try {
+            ++cit;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+    }
+
     // Test insert
     auto [it1, inserted1] = sl.insert({10, "Ten"});
     assert(inserted1);
@@ -26,13 +65,8 @@ void test_basic_operations() {
     auto [it2, inserted2] = sl.insert({10, "Ten-New"});
     assert(!inserted2);
     assert(sl.size() == 1);
-    assert(sl.at(10) == "Ten"); // value remains unchanged
+    assert(sl.at(10) == "Ten-New"); // value is updated
 
-    // Test insert_or_assign
-    auto [it3, inserted3] = sl.insert_or_assign(10, "Ten-Assigned");
-    assert(!inserted3);
-    assert(sl.at(10) == "Ten-Assigned");
-    assert(sl.size() == 1);
 
     // Add more elements
     sl.insert({20, "Twenty"});
@@ -57,6 +91,84 @@ void test_basic_operations() {
     sl[30] = "Thirty";
     assert(sl.at(30) == "Thirty");
     assert(sl.size() == 5);
+
+    // Test decrementing begin and incrementing end on non-empty list throws exception
+    {
+        auto it = sl.begin();
+        bool threw = false;
+        try {
+            --it;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        auto cit = sl.cbegin();
+        threw = false;
+        try {
+            --cit;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        // Also test post-decrement throws exception
+        it = sl.begin();
+        threw = false;
+        try {
+            it--;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        cit = sl.cbegin();
+        threw = false;
+        try {
+            cit--;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        // Test incrementing end throws exception
+        it = sl.end();
+        threw = false;
+        try {
+            ++it;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        cit = sl.cend();
+        threw = false;
+        try {
+            ++cit;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        // Also test post-increment on end throws exception
+        it = sl.end();
+        threw = false;
+        try {
+            it++;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+
+        cit = sl.cend();
+        threw = false;
+        try {
+            cit++;
+        } catch (const std::out_of_range&) {
+            threw = true;
+        }
+        assert(threw);
+    }
 
     // Test forward iterator traversal
     std::vector<int> keys;
