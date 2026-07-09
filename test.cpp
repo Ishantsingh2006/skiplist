@@ -10,7 +10,7 @@
 
 void test_basic_operations() {
     std::cout << "Testing basic operations..." << std::endl;
-    custom::ConcurrentSkipList<int, std::string> sl(8, 0.5f);
+    skip::skiplist<int, std::string> sl(8, 0.5f);
 
     assert(sl.empty());
     assert(sl.size() == 0);
@@ -205,38 +205,38 @@ void test_memory_leak() {
     std::cout << "Testing memory leak protection..." << std::endl;
 
     // Initially, there should be 0 active nodes
-    assert(custom::NodeBase::active_nodes == 0);
+    assert(skip::NodeBase::active_nodes == 0);
 
     {
-        custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+        skip::skiplist<int, int> sl(16, 0.5f);
         for (int i = 0; i < 1000; ++i) {
             sl.insert({i, i});
         }
         assert(sl.size() == 1000);
         // Make sure nodes are allocated
-        assert(custom::NodeBase::active_nodes == 1000);
+        assert(skip::NodeBase::active_nodes == 1000);
 
         // Erase some nodes
         for (int i = 0; i < 300; ++i) {
             sl.erase(i);
         }
         assert(sl.size() == 700);
-        assert(custom::NodeBase::active_nodes == 700);
+        assert(skip::NodeBase::active_nodes == 700);
 
         // Clear the list
         sl.clear();
         assert(sl.size() == 0);
-        assert(custom::NodeBase::active_nodes == 0);
+        assert(skip::NodeBase::active_nodes == 0);
 
         // Insert again
         for (int i = 0; i < 500; ++i) {
             sl.insert({i, i});
         }
-        assert(custom::NodeBase::active_nodes == 500);
+        assert(skip::NodeBase::active_nodes == 500);
     } // SkipList goes out of scope here; destructor will be called
 
     // After destruction, active nodes must return to 0
-    assert(custom::NodeBase::active_nodes == 0);
+    assert(skip::NodeBase::active_nodes == 0);
 
     std::cout << "  Memory leak protection: PASSED" << std::endl;
 }
@@ -244,10 +244,10 @@ void test_memory_leak() {
 void test_concurrency() {
     std::cout << "Testing concurrent read and write operations..." << std::endl;
 
-    assert(custom::NodeBase::active_nodes == 0);
+    assert(skip::NodeBase::active_nodes == 0);
 
     {
-        custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+        skip::skiplist<int, int> sl(16, 0.5f);
         
         const int num_threads = 8;
         const int ops_per_thread = 1000;
@@ -300,7 +300,7 @@ void test_concurrency() {
 
         // Verify size
         assert(sl.size() == (num_threads / 2 * ops_per_thread));
-        assert(custom::NodeBase::active_nodes == static_cast<int64_t>(sl.size()));
+        assert(skip::NodeBase::active_nodes == static_cast<int64_t>(sl.size()));
 
         // Verify list integrity under concurrent changes
         auto integrity = sl.lacksIntegrity();
@@ -308,7 +308,7 @@ void test_concurrency() {
     }
 
     // List is destroyed, memory must be fully reclaimed
-    assert(custom::NodeBase::active_nodes == 0);
+    assert(skip::NodeBase::active_nodes == 0);
 
     std::cout << "  Concurrent read and write: PASSED" << std::endl;
 }

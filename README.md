@@ -1,6 +1,6 @@
-# Concurrent Skip List
+# skiplist
 
-A high-performance concurrent Skip List implementation in C++. It provides a map-like associative container that supports multi-reader concurrency with safe concurrent reads and exclusive writes.
+A high-performance concurrent skiplist implementation in C++. It provides a map-like associative container that supports multi-reader concurrency with safe concurrent reads and exclusive writes.
 
 ---
 
@@ -20,7 +20,7 @@ To use the Skip List, include the header file directly in your C++ code:
 #include "skiplist.hpp"
 
 int main() {
-    custom::ConcurrentSkipList<int, std::string> sl;
+    skip::skiplist<int, std::string> sl;
     sl.insert({1, "one"});
     if (sl.contains(1)) {
         std::cout << sl.at(1) << std::endl;
@@ -142,7 +142,7 @@ Measures throughput under mixed workloads:
 
 | Function Signature | Description | Time Complexity (Average) |
 |:---|:---|:---|
-| `ConcurrentSkipList(size_t max_level = 32, float p = 0.5f)` | Constructs an empty Skip List with a maximum index height and level generation probability. | $O(1)$ |
+| `skiplist(size_t max_level = 32, float p = 0.5f)` | Constructs an empty Skip List with a maximum index height and level generation probability. | $O(1)$ |
 | `std::pair<iterator, bool> insert(const value_type& value)` | Inserts a key-value pair. Returns an iterator to the node and `true` if inserted, `false` if key already exists. | $O(\log n)$ |
 | `std::pair<iterator, bool> insert(value_type&& value)` | Moves and inserts a key-value pair. | $O(\log n)$ |
 | `std::pair<iterator, bool> insert_or_assign(const Key& key, M&& obj)` | Inserts key-value pair or assigns value to key if it already exists. | $O(\log n)$ |

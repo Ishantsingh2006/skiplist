@@ -12,7 +12,7 @@ void run_basic_demo()
     std::cout << "==================================================\n";
 
     // Initialize with explicit max level (8) and probability p (0.5f)
-    custom::ConcurrentSkipList<int, std::string> sl(8, 0.5f);
+    skip::skiplist<int, std::string> sl(8, 0.5f);
 
     sl.insert({10, "Ten"});
     sl.insert({20, "Twenty"});
@@ -105,7 +105,7 @@ void run_concurrency_demo()
     std::cout << "==================================================\n";
 
     // Initialize with explicit max level (16) and probability p (0.5f)
-    custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    skip::skiplist<int, int> sl(16, 0.5f);
 
     const int num_writers = 4;
     const int num_readers = 4;

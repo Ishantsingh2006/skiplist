@@ -1,5 +1,5 @@
-#ifndef CONCURRENT_SKIPLIST_HPP
-#define CONCURRENT_SKIPLIST_HPP
+#ifndef SKIPLIST_HPP
+#define SKIPLIST_HPP
 
 #include <iostream>
 #include <vector>
@@ -16,7 +16,7 @@
 #include <expected>
 #include <atomic>
 
-namespace custom
+namespace skip
 {
 
     struct NodeBase
@@ -227,7 +227,7 @@ namespace custom
     };
 
     template <typename Key, typename T, typename Compare = std::less<Key>>
-    class ConcurrentSkipList
+    class skiplist
     {
     public:
         using key_type = Key;
@@ -427,7 +427,7 @@ namespace custom
         }
 
     public:
-        explicit ConcurrentSkipList(size_t max_level = 32, float p = 0.5f, const Compare &comp = Compare())
+        explicit skiplist(size_t max_level = 32, float p = 0.5f, const Compare &comp = Compare())
             : m_head(max_level),
               m_size(0),
               m_max_level(max_level),
@@ -442,15 +442,15 @@ namespace custom
             m_head.prev = nullptr;
         }
 
-        ~ConcurrentSkipList()
+        ~skiplist()
         {
             clear();
         }
 
-        ConcurrentSkipList(const ConcurrentSkipList &) = delete;
-        ConcurrentSkipList &operator=(const ConcurrentSkipList &) = delete;
+        skiplist(const skiplist &) = delete;
+        skiplist &operator=(const skiplist &) = delete;
 
-        ConcurrentSkipList(ConcurrentSkipList &&other) noexcept
+        skiplist(skiplist &&other) noexcept
         {
             std::unique_lock<std::shared_mutex> lock(other.m_mutex);
             m_max_level = other.m_max_level;
@@ -465,7 +465,7 @@ namespace custom
             other.m_size = 0;
         }
 
-        ConcurrentSkipList &operator=(ConcurrentSkipList &&other) noexcept
+        skiplist &operator=(skiplist &&other) noexcept
         {
             if (this != &other)
             {
@@ -561,7 +561,7 @@ namespace custom
             auto *found = self.find_helper(key);
             if (found == nullptr)
             {
-                throw std::out_of_range("ConcurrentSkipList::at: key not found");
+                throw std::out_of_range("skiplist::at: key not found");
             }
             using NodePtr = std::conditional_t<std::is_const_v<std::remove_reference_t<Self>>,
                                                const Node<Key, T> *,
@@ -786,4 +786,4 @@ namespace custom
 
 }
 
-#endif // CONCURRENT_SKIPLIST_HPP
+#endif // SKIPLIST_HPP

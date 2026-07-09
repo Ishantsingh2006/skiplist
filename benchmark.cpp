@@ -49,21 +49,21 @@ static const std::vector<MixedOp> &get_global_mixed_ops()
 
 // --- Static SkipList instances to prevent thread lifetime races ---
 
-static custom::ConcurrentSkipList<int, int> &get_insert_seq_list()
+static skip::skiplist<int, int> &get_insert_seq_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_insert_rand_list()
+static skip::skiplist<int, int> &get_insert_rand_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_contain_seq_list()
+static skip::skiplist<int, int> &get_contain_seq_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -71,9 +71,9 @@ static custom::ConcurrentSkipList<int, int> &get_contain_seq_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_contain_rand_list()
+static skip::skiplist<int, int> &get_contain_rand_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -81,9 +81,9 @@ static custom::ConcurrentSkipList<int, int> &get_contain_rand_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_remove_seq_list()
+static skip::skiplist<int, int> &get_remove_seq_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -91,9 +91,9 @@ static custom::ConcurrentSkipList<int, int> &get_remove_seq_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_remove_rand_list()
+static skip::skiplist<int, int> &get_remove_rand_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -101,9 +101,9 @@ static custom::ConcurrentSkipList<int, int> &get_remove_rand_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_mixed_equal_list()
+static skip::skiplist<int, int> &get_mixed_equal_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -111,9 +111,9 @@ static custom::ConcurrentSkipList<int, int> &get_mixed_equal_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_mixed_read_list()
+static skip::skiplist<int, int> &get_mixed_read_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
@@ -121,9 +121,9 @@ static custom::ConcurrentSkipList<int, int> &get_mixed_read_list()
     return sl;
 }
 
-static custom::ConcurrentSkipList<int, int> &get_mixed_write_list()
+static skip::skiplist<int, int> &get_mixed_write_list()
 {
-    static custom::ConcurrentSkipList<int, int> sl(16, 0.5f);
+    static skip::skiplist<int, int> sl(16, 0.5f);
     static std::once_flag flag;
     std::call_once(flag, []()
                    {
